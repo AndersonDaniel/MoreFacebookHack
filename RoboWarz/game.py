@@ -64,7 +64,7 @@ except KeyError:
 
 facebook_graph = facebook.GraphAPI(oauth_access_token)
 
-user_access_token = 'EAAERmc6VfCwBAGpwcFPZCF1UBwnxYVhfh347ZAWMGNvTDQ9aFnFzpPjtZB45wenzjgegRxJNKzIaVrQn70BZBBwcEJ1wgi12bh19pYiKDMFYCRrVNgNELu47liXZAiTr4G5EfZAji75pP1l7feln5HYVZCDqf0Pvq4AIiK3ZBpj4gAZDZD'
+user_access_token = 'EAACEdEose0cBABCdyGxVZB33dJCk3npeCnJKZAOH9Y6KfEzcbzSICkYEMhcwrLpDhLbvzqApxtlZAD9UPGZChbH78Wg1ZC0nMsGCKE4sDulV7wGOGykflyj02hYZAtFzj79bZA5jxG3Ps3wRG9Bg80CvMwtYl0hFzkmOLkwwfqDkgZDZD'
 
 last_post = facebook_graph.request("/1283318901687249/feed", args={'access_token':user_access_token})['data'][0]["id"]
 
@@ -175,17 +175,18 @@ def game_main():
 		clock.tick(FPS)
 
 def parse_command(command, robot1_commands, robot2_commands, robot1_firebase, robot2_firebase):
-	robot, direction = command[1].split()[:2]
-	l = []
-	firebase_l = []
-	if (robot == 'robot1'):
-		l = robot1_commands
-		firebase_l = robot1_firebase
-	elif (robot == 'robot2'):
-		l = robot2_commands
-		firebase_l = robot2_firebase
-	l.append((command[0], direction))
-	firebase_l.append(direction)
+	if (len(command[1].split()) > 1):
+		robot, direction = command[1].split()[:2]
+		l = []
+		firebase_l = []
+		if (robot == '1'):
+			l = robot1_commands
+			firebase_l = robot1_firebase
+		elif (robot == '2'):
+			l = robot2_commands
+			firebase_l = robot2_firebase
+		l.append((command[0], direction))
+		firebase_l.append(direction)
 	
 		
 # get profile pic by id
