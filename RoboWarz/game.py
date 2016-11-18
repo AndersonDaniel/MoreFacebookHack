@@ -10,6 +10,7 @@ import datetime
 import pygame, math, random, pygame.gfxdraw, imutils, json, threading, time
 import pygame.camera, pygame.display
 from pygame.locals import *
+import cv2
 from PIL import Image, ImageOps
 
 load_rlock = threading.RLock()
@@ -33,7 +34,9 @@ interactions = {}
 
 pygame.init()
 pygame.font.init()
-pygame.camera.init()
+#pygame.camera.init()
+
+camera = cv2.VideoCapture(0)
 
 screen = pygame.display.set_mode((1028, 720))
 #screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN, 0)
@@ -130,7 +133,7 @@ def game_main():
 	phase1 = -1
 	phase2 = -1
 	
-	cam = pygame.camera.Camera(pygame.camera.list_cameras()[0])
+	#cam = pygame.camera.Camera(pygame.camera.list_cameras()[0])
 	
 	active = {}
 	start_loading_comments(last_post, comments, last_comment_time)
@@ -139,11 +142,15 @@ def game_main():
 	start_pushing_commands(final_commands)
 	
 	while not done:
-		img = cam.get_image()
-		img = pygame.transform.scale(img, (WIDTH, HEIGHT))
+		#img = cam.get_image()
+		#img = pygame.transform.scale(img, (WIDTH, HEIGHT))
+		(grabbed, frame) = camera.read()
+		frame = imutils.resize(frame, width=WIDTH, height=HEIGHT)
+		img = pygame.image.frombuffer(frame.tostring(), frame.shape[1::-1], "RGB")
+		
 		screen.blit(img, (0, 0))
 		screen.blit(background, (0, 400))
-		pygame.draw.circle(screen, (200, 0, 0), (WIDTH / 2, HEIGHT / 2), (HEIGHT - 10) / 2, 5)
+		pygame.draw.circle(screen, (200, 0, 0), (WIDTH / 2, HEIGHT / 2), (HEIGHT - 20) / 2, 5)
 		
 		new_comments = list(comments)
 		[comments.pop() for i in range(len(comments))]
@@ -241,9 +248,7 @@ def parse_command(command, robot1_commands, robot2_commands, firebase_commands):
 		elif (robot == '2'):
 			l = robot2_commands
 		l.append((command[0], direction))
-		print(command[1])
 		if (command[1] in interactions):
-			print('pushing to firebase')
 			firebase_commands.append(interactions[command[1]])
 
 #def parse_command(command, robot1_commands, robot2_commands, robot1_firebase, robot2_firebase):
