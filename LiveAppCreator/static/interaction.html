@@ -1,0 +1,297 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet">
+  <script src="scripts/vis.js"></script>
+  <link rel="stylesheet" type="text/css" href="style/vis-network.min.css">
+	<link rel="stylesheet" type="text/css" href="style/hover.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.orange-blue.min.css">
+	<link rel="stylesheet" href="https://rawgit.com/mebibou/mdl-selectfield/master/dist/mdl-selectfield.min.css">
+
+
+  <title>ControLive Events</title>
+
+  <style type="text/css">
+	  @media (max-width: 512px)  and (min-resolution: 1.5dppx),
+	       	 (max-width: 1024px) and (max-resolution: 1.5dppx) {
+	  div#graph {
+		    height: 250px;
+		  }
+		}
+		@media (min-width: 513px)  and (max-width: 1024px) and (min-resolution: 1.5dppx),
+		       (min-width: 1025px) and (max-width: 2048px) and (max-resolution: 1.5dppx)  {
+		  div#graph {
+		    height: 500px;
+		  }
+		}
+		@media (min-width: 1025px) and (min-resolution: 1.5dppx),
+		       (min-width: 2049px) and (max-resolution: 1.5dppx) {
+		  div#graph{
+		    height: 1320px;
+		  }
+		}
+
+  	@font-face { 
+  		font-family: Facebook;
+  		src: url('fonts/FACEBOLF.OTF');
+  	}
+
+		body {
+			font-family: Facebook;
+			height: 100%;
+			margin: 0;
+		}
+
+  	video { 
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			min-width: 100%;
+			min-height: 100%;
+			width: auto;
+			height: auto;
+			z-index: -100;
+			transform: translateX(-50%) translateY(-50%);
+			background: url('img/backgroundvid.png') no-repeat;
+			background-size: cover;
+			transition: 1s opacity;
+		}
+
+		div.logo {
+			margin-left: 10px;
+		}
+
+			div.logo img {
+				height: 120px;
+				width: 120px;
+				display: inline;
+				margin-right: 5px;
+			}
+
+			div.logo h1  {
+				display: inline;
+				font-family: Facebook;
+				color: white;
+				font-size: 7em;
+				letter-spacing: 4px;
+				position: absolute;
+				top: -20px;
+			}
+
+				div.logo h1 span {
+					font-size: 1.1em;
+				}
+
+		.fab {
+			font-size:3em;
+			width: 60px;
+			height: 60px;
+			margin: auto;
+			position: absolute;
+			right: 50px;
+			bottom: 50px;
+		}
+
+		.widebutton {
+			border: none;
+			font-size: 2em;
+			color: white;
+			background-color: #3b5998;
+			border-radius: 100px;
+			height: 60px;
+			margin-left: 0;
+			margin-right: 0;
+
+			padding: 0 15px;
+			position: absolute;
+			right: 40%;
+			left: 40%;
+
+			bottom: 50px;
+			-webkit-box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .3);
+			   -moz-box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .3);
+			        box-shadow: 2px 3px 3px 0px rgba(41, 41, 41, .3);
+		}
+
+			.widebutton:hover {
+				background-color: #5e87dc;
+			}
+
+		div#graph {
+		}
+
+		div#popup {
+			position: absolute;
+			top: 48%;
+			left: 25%;
+			width: 50%;
+			font-family: "Roboto";
+			background: rgba(255, 255, 255, 0.77);
+			box-shadow: 0px 10px 35px 0px rgba(0, 0, 0, 0.75);
+		}
+
+		div#popup h2 {
+			margin: 0;
+			font-weight: normal;
+			padding: 10px;
+			color: white;
+			background: #f57c00;
+		}
+
+		div#popup > div.first-child {
+				padding-left: 15px;
+		}
+
+		div#popup div * {
+			display: inline-block;
+			font-size: 1.2em;
+		}
+
+		div#popup > div.first-child > #textCall {
+			width: 45%;
+		}
+
+		#save {
+			position: absolute;
+			right: 0;
+		}
+
+		#popup {
+			display: none;
+		}
+
+		#popup a {
+			padding: 15px;
+			margin: 0;
+		}
+
+		.demo-card-wide {
+			margin: 0 auto;
+			top: -70%;
+		}
+		.demo-card-wide.mdl-card {
+		  width: 1200px;
+		}
+		.demo-card-wide > .mdl-card__title {
+		  color: #fff;
+		  height: 80px;
+		  background-color: #3E4EB9;
+		}
+
+		.inline {
+			display: inline;
+		}
+
+		.mdl-selectfield {
+			width: 100px;
+		}
+
+		.mdl-textfield {
+			width: 160px;
+		}
+
+		.url-bar {
+			width: 300px;
+		}
+
+		.mdl-card__supporting-text {
+			margin-left: 20px;
+		}
+
+		#card {
+			display: none;
+		}
+
+  </style>
+</head>
+<body onload="graph();">
+	<video poster="img/backgroundvid.png" id="backvid" playsinline autoplay muted loop>
+		<source src="video/background.mp4" type="video/mp4">
+	</video>
+	
+	<div class="logo">
+		<img src="img/fblogoone.png">
+		<h1 class="title">Contro<span>Live</span></h1>
+	</div>
+
+	<div id="graph"></div>
+
+	<button class="widebutton" id="saveInteractions">Save Interactions</button>
+	<button class="fab mdl-button mdl-js-button mdl-button--fab mdl-button--colored" id="addNode">+</button>
+
+	<!-- <div id="popup">
+		<h2>Edit Interaction</h2>
+		<div class="first-child">
+			<p>When </p>
+			<input type="text" id="textIf">
+			<p>call </p>
+			<input type="text" id="textCall">
+		</div>
+		<div class="first-child">
+			Define a REST API endpoint that gets called when a comment with this text is posted to your live stream
+		</div>
+		<div>
+			<a id="cancel" class="hvr-radial-out">Cancel</a>
+			<a id="save" class="hvr-radial-out">Save</a>
+		</div>
+	</div> -->
+
+  <div class="demo-card-wide mdl-card mdl-shadow--16dp" id="card">
+	  <div class="mdl-card__title">
+	    <h2 class="mdl-card__title-text">Add Interaction</h2>
+	  </div>
+	  <div class="mdl-card__supporting-text">
+	    When 
+	    <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+        <input class="mdl-textfield__input" type="text" id="textCondition">
+        <label class="mdl-textfield__label" for="textCondition">Comment text</label>
+      </div> 
+      is posted, use 
+      <div class="mdl-selectfield mdl-js-selectfield mdl-selectfield--floating-label">
+        <select class="mdl-selectfield__select" id="serviceType" name="serviceType">
+          <option value=""></option>
+          <option value="HTTP">HTTP</option>
+          <option value="Firebase">Firebase</option>
+        </select>
+        <div class="mdl-selectfield__icon"><i class="material-icons">arrow_drop_down</i></div>
+      </div>
+      <div class="mdl-selectfield mdl-js-selectfield mdl-selectfield--floating-label">
+        <select class="mdl-selectfield__select" id="serviceMethod" name="serviceMethod">
+          <option value=""></option>
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="CONCAT">CONCAT</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+        <div class="mdl-selectfield__icon"><i class="material-icons">arrow_drop_down</i></div>
+      </div>
+      to
+      <div class="mdl-textfield url-bar mdl-js-textfield mdl-textfield--floating-label">
+        <input class="mdl-textfield__input" type="text" id="textURL">
+        <label class="mdl-textfield__label" for="textURL">URL</label>
+      </div> 
+      with
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+        <input class="mdl-textfield__input" type="text" id="textParameters">
+        <label class="mdl-textfield__label" for="textParameters">Parameters</label>
+      </div> 
+	  </div>
+	  <div class="mdl-card__actions mdl-card--border">
+	    <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" id="cancel">
+	      Cancel
+	    </a>
+	    <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" id="save">
+	      Add
+	    </a>
+	  </div>
+	</div>
+
+	<script type="text/javascript" src="scripts/inter.js"></script>
+	<script type="text/javascript" src="scripts/http.js"></script>
+	<script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
+	<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+</body>
+</html>
