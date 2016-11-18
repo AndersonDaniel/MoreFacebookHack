@@ -241,7 +241,9 @@ def parse_command(command, robot1_commands, robot2_commands, firebase_commands):
 		elif (robot == '2'):
 			l = robot2_commands
 		l.append((command[0], direction))
+		print(command[1])
 		if (command[1] in interactions):
+			print('pushing to firebase')
 			firebase_commands.append(interactions[command[1]])
 
 #def parse_command(command, robot1_commands, robot2_commands, robot1_firebase, robot2_firebase):
