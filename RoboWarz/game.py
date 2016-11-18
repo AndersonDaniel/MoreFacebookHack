@@ -15,15 +15,21 @@ from PIL import Image, ImageOps
 load_rlock = threading.RLock()
 
 mask = Image.open('images/mask.png').convert('L')
+background = pygame.image.load('images/background.png')
+white = pygame.image.load('images/white.png')
+blue = pygame.image.load('images/blue.png')
 
 # SCREEN
 FPS = 15
 
 PIC_SIZE = 100
+SM_PIC_SIZE = 45
 
 PHASE_UPDATE = 50
 
 profilePicturesDict = {}
+
+interactions = {}
 
 pygame.init()
 pygame.font.init()
@@ -35,8 +41,8 @@ WIDTH, HEIGHT = screen.get_size()
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Tahoma", 40, False, False)
 
-CONTROLLER1 = (10, 500)
-CONTROLLER2 = (WIDTH - 10 - PIC_SIZE, 20)
+CONTROLLER1 = (100, 540)
+CONTROLLER2 = (WIDTH - 10 - PIC_SIZE, 540)
 
 # Hide deprecation warnings. The facebook module isn't that up-to-date (facebook.GraphAPIError).
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -64,7 +70,7 @@ except KeyError:
 
 facebook_graph = facebook.GraphAPI(oauth_access_token)
 
-user_access_token = 'EAACEdEose0cBABCdyGxVZB33dJCk3npeCnJKZAOH9Y6KfEzcbzSICkYEMhcwrLpDhLbvzqApxtlZAD9UPGZChbH78Wg1ZC0nMsGCKE4sDulV7wGOGykflyj02hYZAtFzj79bZA5jxG3Ps3wRG9Bg80CvMwtYl0hFzkmOLkwwfqDkgZDZD'
+user_access_token = 'EAACEdEose0cBABUWBksFQKYyAZApXb7VhA221sezlsJiXqAERKBTJ7hIN7yFu4tZAtMEkEAVWbPlwdjgui9RMEVbxGZAchunJVSZAyBodSUXZCbPHyjvspiZCa2ot4usmtg9QuIe56Buw3wPY8JfUqvIBZClfLCirLQX8j6ZC8YauwZDZD'
 
 last_post = facebook_graph.request("/1283318901687249/feed", args={'access_token':user_access_token})['data'][0]["id"]
 
@@ -76,11 +82,38 @@ except Exception as ex:
 	last_comment_time = dateutil.parser.parse(facebook_graph.request("/1283318901687249/feed", args={'access_token':user_access_token})['data'][0]["created_time"])
 	
 done = False
-	
+
+def get_rules():
+	global interactions
+	data = json.loads(urllib2.urlopen('http://localhost:5000/rules').read())
+	interactions = {}
+	for rule in data:
+		if (rule['type'] == 'firebase' and rule['method'] == 'concatenate'):
+			interactions[rule['condition']] = make_firebase_concat(rule['URL'], rule['param'])
+
+def make_firebase_concat(url, value):
+	def concat():
+		data = json.loads(urllib2.urlopen(url).read())
+		if not data:
+			data = ''
+		else:
+			data += ','
+		data += value
+		
+		opener = urllib2.build_opener(urllib2.HTTPHandler)
+		request = urllib2.Request(url, data='"' + data + '"')
+		request.add_header('Content-Type', 'text/json')
+		request.get_method = lambda: 'PUT'
+		res = opener.open(request)
+	return concat
+		
+		
 def game_main():
 	global last_comment_time
 	global profilePicturesDict
 	global done
+	
+	get_rules()
 	
 	comments = []
 	
@@ -89,6 +122,8 @@ def game_main():
 	
 	robot1_to_firebase = []
 	robot2_to_firebase = []
+	
+	final_commands = []
 	
 	pending_commands = []
 	
@@ -99,13 +134,15 @@ def game_main():
 	
 	active = {}
 	start_loading_comments(last_post, comments, last_comment_time)
-	start_pushing_commands(robot1_to_firebase, 'https://fbhack-9a7bd.firebaseio.com/robot1.json')
-	start_pushing_commands(robot2_to_firebase, 'https://fbhack-9a7bd.firebaseio.com/robot2.json')
+	#start_pushing_commands(robot1_to_firebase, 'https://fbhack-9a7bd.firebaseio.com/robot1.json')
+	#start_pushing_commands(robot2_to_firebase, 'https://fbhack-9a7bd.firebaseio.com/robot2.json')
+	start_pushing_commands(final_commands)
 	
 	while not done:
 		img = cam.get_image()
 		img = pygame.transform.scale(img, (WIDTH, HEIGHT))
 		screen.blit(img, (0, 0))
+		screen.blit(background, (0, 400))
 		pygame.draw.circle(screen, (200, 0, 0), (WIDTH / 2, HEIGHT / 2), (HEIGHT - 10) / 2, 5)
 		
 		new_comments = list(comments)
@@ -126,7 +163,8 @@ def game_main():
 			elif profilePicturesDict[user] == 'dummy':
 				new_pending_commands.append(pending)
 			else:
-				parse_command(pending, robot1_commands, robot2_commands, robot1_to_firebase, robot2_to_firebase)
+				parse_command(pending, robot1_commands, robot2_commands, final_commands)
+				#parse_command(pending, robot1_commands, robot2_commands, robot1_to_firebase, robot2_to_firebase)
 		
 		pending_commands = new_pending_commands
 		
@@ -158,6 +196,23 @@ def game_main():
 				phase2 = 0
 		else:
 			phase2 = -1
+			
+		robot1_queue = map(lambda command: command[0], robot1_commands[1:min(5, len(robot1_commands))])
+		x = 10
+		y = 495 - PIC_SIZE
+		for user in robot1_queue:
+			curr_img = pygame.transform.scale(profilePicturesDict[user], (SM_PIC_SIZE, SM_PIC_SIZE))
+			y -= SM_PIC_SIZE
+			screen.blit(curr_img, (x, y))
+		
+		robot2_queue = map(lambda command: command[0], robot2_commands[1:min(5, len(robot2_commands))])
+		x = WIDTH - SM_PIC_SIZE
+		y = 495 - PIC_SIZE
+		for user in robot2_queue:
+			curr_img = pygame.transform.scale(profilePicturesDict[user], (SM_PIC_SIZE, SM_PIC_SIZE))
+			y -= SM_PIC_SIZE
+			screen.blit(curr_img, (x, y))
+		
 		
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
@@ -170,23 +225,38 @@ def game_main():
 		for key in active.keys():
 			if key == pygame.K_ESCAPE:
 				done = True
+			elif key == pygame.K_r:
+				get_rules()
 				
 		pygame.display.flip()
 		clock.tick(FPS)
 
-def parse_command(command, robot1_commands, robot2_commands, robot1_firebase, robot2_firebase):
+def parse_command(command, robot1_commands, robot2_commands, firebase_commands):
+	global interactions
 	if (len(command[1].split()) > 1):
 		robot, direction = command[1].split()[:2]
 		l = []
-		firebase_l = []
 		if (robot == '1'):
 			l = robot1_commands
-			firebase_l = robot1_firebase
 		elif (robot == '2'):
 			l = robot2_commands
-			firebase_l = robot2_firebase
 		l.append((command[0], direction))
-		firebase_l.append(direction)
+		if (command[1] in interactions):
+			firebase_commands.append(interactions[command[1]])
+
+#def parse_command(command, robot1_commands, robot2_commands, robot1_firebase, robot2_firebase):
+#	if (len(command[1].split()) > 1):
+#		robot, direction = command[1].split()[:2]
+#		l = []
+#		firebase_l = []
+#		if (robot == '1'):
+#			l = robot1_commands
+#			firebase_l = robot1_firebase
+#		elif (robot == '2'):
+#			l = robot2_commands
+#			firebase_l = robot2_firebase
+#		l.append((command[0], direction))
+#		firebase_l.append(direction)
 	
 		
 # get profile pic by id
@@ -233,27 +303,36 @@ def start_loading_comments(post, where_to_save_to, last_comment_time):
 	t = threading.Thread(target=load, args=(last_comment_time,))
 	t.start()
 
-def start_pushing_commands(commands_list, url):
+def start_pushing_commands(commands_list):
 	global done
 	def push():
 		while not done:
-			if (len(commands_list) > 0):
-				data = json.loads(urllib2.urlopen(url).read())
-				if not data:
-					data = ''
-				else:
-					data += ','
-				data += ','.join(commands_list)
-				
-				[commands_list.pop() for i in range(len(commands_list))]
-				
-				opener = urllib2.build_opener(urllib2.HTTPHandler)
-				request = urllib2.Request(url, data='"' + data + '"')
-				request.add_header('Content-Type', 'text/json')
-				request.get_method = lambda: 'PUT'
-				res = opener.open(request)
+			if (len(commands_list) > 0):		
+				[commands_list.pop(0)() for i in range(len(commands_list))]
 	t = threading.Thread(target=push)
 	t.start()
+	
+#def start_pushing_commands(commands_list, url):
+#	global done
+#	def push():
+#		while not done:
+#			if (len(commands_list) > 0):
+#				data = json.loads(urllib2.urlopen(url).read())
+#				if not data:
+#					data = ''
+#				else:
+#					data += ','
+#				data += ','.join(commands_list)
+#				
+#				[commands_list.pop() for i in range(len(commands_list))]
+#				
+#				opener = urllib2.build_opener(urllib2.HTTPHandler)
+#				request = urllib2.Request(url, data='"' + data + '"')
+#				request.add_header('Content-Type', 'text/json')
+#				request.get_method = lambda: 'PUT'
+#				res = opener.open(request)
+#	t = threading.Thread(target=push)
+#	t.start()
 		
 game_main()
 
